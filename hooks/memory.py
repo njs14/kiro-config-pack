@@ -129,6 +129,8 @@ def extract(path):
             except ValueError:
                 continue
             role = pick(rec, "role", "type", "hook_event_name") or ""
+            if "session_start" in str(role).lower():
+                continue  # system-prompt payload, not session history
             if "user" in str(role).lower() or "prompt" in str(role).lower():
                 p = pick(rec, "prompt", "content", "text", "message")
                 if p and not p.startswith("/"):

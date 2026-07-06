@@ -74,6 +74,10 @@ def main():
             with open(os.path.join(sess_dir, f"s{i}.jsonl"), "w") as f:
                 f.write(json.dumps({"role":"user","content":"always use OpenTofu, not Terraform CLI"}) + "\n")
                 f.write(json.dumps({"role":"user","content":"rare one-off remark %d" % i if i < 2 else "different note"}) + "\n")
+                # real v3 schema: system prompt arrives as a session_start record and is
+                # full of error/denied phrasing that must not be mistaken for history
+                f.write(json.dumps({"payload":{"type":"session_start","content":
+                    "If permission is denied you are FORBIDDEN from retrying. error error"}}) + "\n")
             os.utime(os.path.join(sess_dir, f"s{i}.jsonl"))
             run(MEMORY, {"cwd": proj}, argv=["distill"], env=env)
             for j in range(i):  # ensure only newest file is 'recent' next loop
@@ -88,17 +92,23 @@ def main():
         p3 = subprocess.run(["python3", MEMORY, "recall"], input=json.dumps({"cwd": proj}),
                             capture_output=True, text=True, env=env)
         injected = "learned preferences" in p3.stdout.lower() and "opentofu" in p3.stdout.lower()
+        all_mem = ""
+        for root, _dirs, fs in os.walk(os.path.join(tmp, ".kiro", "memory")):
+            for fn in fs:
+                all_mem += open(os.path.join(root, fn), errors="replace").read()
+        no_sysprompt = "FORBIDDEN" not in all_mem
         for name, ok in [("memory distill writes note", rc == 0 and wrote),
                          ("memory scrubs credentials", wrote and not leaked),
                          ("memory recall succeeds", rc2 == 0),
                          ("stm consensus graduates at 3 sessions", graduated),
                          ("stm below-threshold does not graduate", not_early),
-                         ("stm learned tier injected by recall", injected)]:
+                         ("stm learned tier injected by recall", injected),
+                         ("session_start payload excluded from notes", no_sysprompt)]:
             print(f"{'OK  ' if ok else 'FAIL'} {name}")
             if not ok:
                 fails.append(name)
 
-    total = len(GUARD_CASES) + 6
+    total = len(GUARD_CASES) + 7
     print(f"\n{total - len(fails)}/{total} passed" + (f" — FAILURES: {fails}" if fails else ""))
     return 1 if fails else 0
 

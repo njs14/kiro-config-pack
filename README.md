@@ -8,6 +8,7 @@ which share the unified agent harness, hook schema, and permission engine).
 | File | Install to | Purpose |
 |---|---|---|
 | `anthropic-defaults.json` | `~/.kiro/hooks/` | 15 hooks: security guards, formatters, IaC lint, notifications, memory |
+| `kiro-pack.json` (agent) | `~/.kiro/agents/` | Agent config wiring the guard/memory hooks — **required for hook execution on kiro-cli 2.11.0**, which loads hooks from agent configs, not standalone hook files (see note below) |
 | `guards.py` | `~/.kiro/hooks/` (`chmod +x`) | Consolidated PreToolUse/UserPromptSubmit guard engine |
 | `memory.py` | `~/.kiro/hooks/` (`chmod +x`) | Two-tier session memory (STM inject + LTM notes) |
 | `permissions.yaml` | `~/.kiro/settings/` | Capability rules: allow-by-default with a deny floor |
@@ -81,7 +82,14 @@ positive and a near-miss negative test case.
 3. Try `git push --force` in-session — expect the hook block message.
 4. If memory notes come out empty: dump one Stop payload
    (`cat >> /tmp/probe.json` in a temporary hook) and adjust field names in `memory.py`.
-5. Run `python3 ~/.kiro/skills/kiro-config-pack/scripts/selftest.py` — expect 25/25.
+5. Run `python3 ~/.kiro/skills/kiro-config-pack/scripts/selftest.py` — expect 29/29.
+
+> **kiro-cli 2.11.0 note (verified 2026-07-05):** this build does not execute
+> standalone hook files from `~/.kiro/hooks/*.json` or workspace `.kiro/hooks/`
+> in CLI sessions — hooks only run when wired through an agent config. Start
+> sessions with `kiro-cli chat --agent kiro-pack` (or `kiro-cli agent
+> set-default kiro-pack`). `anthropic-defaults.json` remains the hook-file-format
+> definition for surfaces that read it (Kiro IDE / later CLI builds).
 
 ## Steering verification (agent behavior, not exit codes)
 

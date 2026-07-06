@@ -1,0 +1,41 @@
+{
+  "name": "kiro-pack",
+  "description": "Kiro agent with the kiro-config-pack guard + memory hooks wired via the agent-config hooks block (the mechanism kiro-cli 2.11.0 actually loads; standalone ~/.kiro/hooks/*.json files are not read by this build). Use with `kiro-cli chat --agent kiro-pack` or `kiro-cli agent set-default kiro-pack`.",
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && { echo \"## Git context\"; git status -sb; echo; echo \"Recent commits:\"; git log --oneline -5; } || true"
+      },
+      {
+        "command": "uv run --script ~/.kiro/hooks/memory.py recall"
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      }
+    ],
+    "preToolUse": [
+      {
+        "matcher": "execute_bash",
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      },
+      {
+        "matcher": "fs_read|fs_write",
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "fs_write",
+        "command": "P=$(cat | jq -r '.tool_input.path // empty'); case \"$P\" in *.ts|*.tsx|*.js|*.jsx|*.json|*.css|*.md) [ -x node_modules/.bin/prettier ] && node_modules/.bin/prettier --write \"$P\" >/dev/null 2>&1;; *.py) ruff format \"$P\" 2>/dev/null || black -q \"$P\" 2>/dev/null;; *.tf|*.tfvars) command -v tofu >/dev/null 2>&1 && tofu fmt \"$P\" >/dev/null 2>&1;; esac; exit 0"
+      }
+    ],
+    "stop": [
+      {
+        "command": "uv run --script ~/.kiro/hooks/memory.py distill"
+      }
+    ]
+  },
+  "useLegacyMcpJson": true
+}

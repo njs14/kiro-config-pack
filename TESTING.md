@@ -131,9 +131,36 @@ real attempt-3 session JSONL (`echo '{"hook_event_name":"stop","cwd":"<scratch>"
    model's own policy layer before any pack layer was reached — the layers below
    (hooks/permissions) went unexercised in that probe, not bypassed.
 
+## Fixes applied after the live runs (2026-07-05, zero credits)
+
+1. **Hook wiring (Conclusion 2)** — root cause identified: kiro-cli 2.11.0 loads
+   hooks from **agent configs** (`~/.kiro/agents/*.json`, `hooks` block), not from
+   standalone hook files. Added `agents/kiro-pack.json` carrying the pack's
+   guard/memory hooks (v2-style camelCase triggers, from
+   `legacy/kiro-v2-agent-hooks.json`, plus `memory.py recall` on agentSpawn and
+   `memory.py distill` on stop). Validated with `kiro-cli agent validate` (exit 0)
+   and discovered by `kiro-cli agent list`. install.sh now installs it and prints
+   activation instructions (`kiro-cli chat --agent kiro-pack`). README updated.
+   **Live firing not yet verified** — would cost a session; see Deferred.
+2. **extract() noise (schema note in "Offline verification")** — `memory.py` now
+   skips `session_start` records (system-prompt payloads) during session-JSONL
+   extraction. Selftest gained a real-schema regression case
+   ("session_start payload excluded from notes"); the new case was confirmed to
+   FAIL against the pre-fix build and pass after. Re-ran the distill against the
+   real attempt-3 session JSONL in an isolated HOME: note is clean (no
+   "Errors seen" pollution). **Selftest is now 29/29** (was 28/28).
+3. **README staleness** — "expect 25/25" corrected to 29/29; install table and
+   first-run docs now document the agent-config requirement on this CLI build.
+
+Not fixable on our side: the `qwen3-coder-next` HTTP 500 (server-side) and the
+model-policy refusal in attempt 3 (a defense layer above the pack, not a defect).
+
 ## Deferred (would cost credits or need the IDE)
 
-- Hook-firing verification in an interactive CLI session and in Kiro IDE 1.0.
+- Live verification that agent-config hooks fire: one one-shot session with
+  `--agent kiro-pack` (~0.03–0.06 credits) would confirm audit-log growth, the
+  memory distill on stop, and (with a force-push prompt) the PreToolUse block.
+- Hook-firing verification in Kiro IDE 1.0 (standalone hook-file path).
 - Recall probe (c) — "what did we work on last time" (memory notes now exist, so
   a future 1-shot session can test SessionStart injection... if hooks fire).
 - Knowledge-base indexing of `~/.kiro/memory` (`chat.enableKnowledge` is already

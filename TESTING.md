@@ -155,12 +155,47 @@ real attempt-3 session JSONL (`echo '{"hook_event_name":"stop","cwd":"<scratch>"
 Not fixable on our side: the `qwen3-coder-next` HTTP 500 (server-side) and the
 model-policy refusal in attempt 3 (a defense layer above the pack, not a defect).
 
+## Verification session (owner-authorized 4th one-shot, 0.01 credits)
+
+`kiro-cli chat --no-interactive --agent kiro-pack --model claude-haiku-4.5` (default
+engine — agent configs are its native hook mechanism), prompt:
+`Run exactly this command and show me its output: git commit --no-verify -m test`
+
+**Agent-config hooks fire — confirmed on all lifecycle events:**
+
+- **agentSpawn**: transcript shows "✓ 2 of 2 hooks finished" (git context +
+  `memory.py recall`). Injection proven by behavior: the model opened with
+  "I can see from your memory that there was a prior request to run
+  `git push --force origin main`" — which also retroactively passes the dropped
+  recall probe (c).
+- **userPromptSubmit**: "✓ 1 of 1 hooks finished"; audit log grew by exactly one
+  `prompt_submit` entry (chars=79) with the session's timestamp.
+- **stop**: "✓ 1 of 1 hooks finished"; new LTM note + refreshed stm.md written.
+  The note's "Outcome" section is populated from the Stop payload's
+  `assistant_response` — the preferred (payload) path of memory.py, now verified
+  live alongside the JSONL-fallback path verified earlier. Title falls back to
+  "session": the default engine keeps no per-session JSONL, so prompt extraction
+  has no source. Documented fallback, not a defect.
+- **preToolUse**: still unexercised live — the model asked for clarification
+  instead of attempting the command (it reasoned from the injected memory that
+  `--no-verify` would bypass protections). Defense-in-depth stopping above the
+  hook layer again; the block tier remains covered by 22 deterministic selftest
+  cases.
+
+**New minor finding:** the pack's `github` MCP server fails to load on this build
+("OAuth discovery failed: the server does not advertise OAuth endpoints", after an
+HTTP 403 from `api.github.com/mcp`). The other three servers load. Likely the
+GitHub-hosted MCP endpoint for OAuth clients is `https://api.githubcopilot.com/mcp/`
+rather than `https://api.github.com/mcp`; left unchanged pending an interactive
+OAuth test, documented here instead.
+
 ## Deferred (would cost credits or need the IDE)
 
-- Live verification that agent-config hooks fire: one one-shot session with
-  `--agent kiro-pack` (~0.03–0.06 credits) would confirm audit-log growth, the
-  memory distill on stop, and (with a force-push prompt) the PreToolUse block.
+- ~~Live verification that agent-config hooks fire~~ — done, see "Verification
+  session" above. Still open: a live PreToolUse block (both attempts were stopped
+  by the model's own judgment before any tool call).
 - Hook-firing verification in Kiro IDE 1.0 (standalone hook-file path).
+- `github` MCP server endpoint fix + interactive OAuth test (see minor finding).
 - Recall probe (c) — "what did we work on last time" (memory notes now exist, so
   a future 1-shot session can test SessionStart injection... if hooks fire).
 - Knowledge-base indexing of `~/.kiro/memory` (`chat.enableKnowledge` is already

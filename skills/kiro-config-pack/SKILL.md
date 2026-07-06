@@ -80,3 +80,11 @@ into learned.md, which recall injects as "learned preferences". Tuning: adjust t
 signal regex or threshold as data; graduation appends to learned.md only — it must
 NEVER auto-write steering files, agent configs, or hooks. Users can hand-edit or
 delete learned.md freely; observations older than 60 days are pruned automatically.
+
+**LTM roll-up**: `consolidate_ltm` (also exposed as `memory.py consolidate`, and run
+automatically at the end of distill) digests notes older than `ARCHIVE_AGE_DAYS` into
+monthly `archive/<YYYY-MM>.md` files, gated by `LTM_CONSOLIDATE_THRESHOLD` notes and a
+daily stamp file. It must never touch learned.md, observations.jsonl, stm.md, steering,
+or configs, and everything it writes passes scrub(). Semantic consolidation (merging
+related notes with model judgment) is deliberately manual — see DREAMING.md in the pack
+repo; do not wire it into a hook.

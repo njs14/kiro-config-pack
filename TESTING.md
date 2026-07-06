@@ -189,6 +189,16 @@ GitHub-hosted MCP endpoint for OAuth clients is `https://api.githubcopilot.com/m
 rather than `https://api.github.com/mcp`; left unchanged pending an interactive
 OAuth test, documented here instead.
 
+## LTM consolidation added post-publish (2026-07-05, zero credits)
+
+Closes the "No LTM consolidation yet" known limit. `memory.py consolidate` (also
+auto-run from the Stop-hook distill) rolls notes older than 30 days into monthly
+`archive/` digests, gated to projects with >30 notes and at most one pass per day.
+Deterministic, no model. Three new selftest cases cover the below-threshold no-op,
+the archive/scrub/remove pass, and the daily stamp gate: **selftest is now 32/32**.
+Semantic consolidation is documented as a manual Claude Code routine in DREAMING.md
+(zero Kiro credits) rather than automated, deliberately.
+
 ## Deferred (would cost credits or need the IDE)
 
 - ~~Live verification that agent-config hooks fire~~ — done, see "Verification

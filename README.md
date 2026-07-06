@@ -82,7 +82,7 @@ positive and a near-miss negative test case.
 3. Try `git push --force` in-session and expect the hook block message.
 4. If memory notes come out empty: dump one Stop payload
    (`cat >> /tmp/probe.json` in a temporary hook) and adjust field names in `memory.py`.
-5. Run `python3 ~/.kiro/skills/kiro-config-pack/scripts/selftest.py` and expect 29/29.
+5. Run `python3 ~/.kiro/skills/kiro-config-pack/scripts/selftest.py` and expect 32/32.
 
 > **kiro-cli 2.11.0 note (verified 2026-07-05):** this build does not execute
 > standalone hook files from `~/.kiro/hooks/*.json` or workspace `.kiro/hooks/`
@@ -119,4 +119,7 @@ memory notes in any session that processes untrusted content.
   simulated payloads, not every real schema variant).
 - IDE 1.0 shares the hook schema and permission engine; verify PreToolUse blocking fires
   in IDE agent modes on your build before relying on it there.
-- No LTM consolidation yet: notes accumulate as plain markdown, so prune or roll up manually.
+- LTM roll-up is housekeeping only: `memory.py consolidate` (auto-run from the Stop
+  hook, at most daily, once a project passes 30 notes) digests old notes into monthly
+  `archive/` files. Semantic merging needs a model and stays a manual routine; see
+  [DREAMING.md](DREAMING.md).

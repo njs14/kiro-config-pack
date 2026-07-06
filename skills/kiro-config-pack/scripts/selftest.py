@@ -97,18 +97,43 @@ def main():
             for fn in fs:
                 all_mem += open(os.path.join(root, fn), errors="replace").read()
         no_sysprompt = "FORBIDDEN" not in all_mem
+        # LTM roll-up: below threshold -> no-op; old notes -> monthly digest,
+        # scrubbed, originals removed; fresh stamp gates the next pass
+        mem_base = os.path.join(tmp, ".kiro", "memory", "proj")
+        arch = os.path.join(mem_base, "archive")
+        before = set(os.listdir(notes_dir))
+        rc4, _ = run(MEMORY, {"cwd": proj}, argv=["consolidate"], env=env)
+        noop = rc4 == 0 and not os.path.isdir(arch) and set(os.listdir(notes_dir)) == before
+        for i in range(31):
+            with open(os.path.join(notes_dir, f"2020-01-{(i % 28) + 1:02d}-0000-old-{i:02d}.md"), "w") as f:
+                f.write(f"# 2020-01 old topic {i:02d}\n\n## Asked\n- fix bug {i:02d}\n"
+                        "- key ghp_abcdefghijklmnopqrstuvwxyz0123456789\n")
+        rc5, _ = run(MEMORY, {"cwd": proj}, argv=["consolidate"], env=env)
+        arch_file = os.path.join(arch, "2020-01.md")
+        arch_txt = open(arch_file, errors="replace").read() if os.path.exists(arch_file) else ""
+        archived = (rc5 == 0 and "old topic 07" in arch_txt and "fix bug 07" in arch_txt
+                    and not any(f.startswith("2020-01") for f in os.listdir(notes_dir))
+                    and "ghp_abcdef" not in arch_txt)
+        for i in range(31):
+            with open(os.path.join(notes_dir, f"2020-02-{(i % 28) + 1:02d}-0000-late-{i:02d}.md"), "w") as f:
+                f.write(f"# 2020-02 late {i:02d}\n")
+        rc6, _ = run(MEMORY, {"cwd": proj}, argv=["consolidate"], env=env)
+        gated = rc6 == 0 and sum(f.startswith("2020-02") for f in os.listdir(notes_dir)) == 31
         for name, ok in [("memory distill writes note", rc == 0 and wrote),
                          ("memory scrubs credentials", wrote and not leaked),
                          ("memory recall succeeds", rc2 == 0),
                          ("stm consensus graduates at 3 sessions", graduated),
                          ("stm below-threshold does not graduate", not_early),
                          ("stm learned tier injected by recall", injected),
-                         ("session_start payload excluded from notes", no_sysprompt)]:
+                         ("session_start payload excluded from notes", no_sysprompt),
+                         ("ltm consolidate no-op below threshold", noop),
+                         ("ltm consolidate archives, scrubs, removes originals", archived),
+                         ("ltm consolidate honors daily stamp", gated)]:
             print(f"{'OK  ' if ok else 'FAIL'} {name}")
             if not ok:
                 fails.append(name)
 
-    total = len(GUARD_CASES) + 7
+    total = len(GUARD_CASES) + 10
     print(f"\n{total - len(fails)}/{total} passed" + (f" — FAILURES: {fails}" if fails else ""))
     return 1 if fails else 0
 

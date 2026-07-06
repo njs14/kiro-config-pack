@@ -82,7 +82,7 @@ positive and a near-miss negative test case.
 3. Try `git push --force` in-session and expect the hook block message.
 4. If memory notes come out empty: dump one Stop payload
    (`cat >> /tmp/probe.json` in a temporary hook) and adjust field names in `memory.py`.
-5. Run `python3 ~/.kiro/skills/kiro-config-pack/scripts/selftest.py` and expect 32/32.
+5. Run `python3 ~/.kiro/skills/kiro-config-pack/scripts/selftest.py` and expect 33/33.
 
 > **kiro-cli 2.11.0 note (verified 2026-07-05):** this build does not execute
 > standalone hook files from `~/.kiro/hooks/*.json` or workspace `.kiro/hooks/`

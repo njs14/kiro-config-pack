@@ -119,6 +119,21 @@ def main():
                 f.write(f"# 2020-02 late {i:02d}\n")
         rc6, _ = run(MEMORY, {"cwd": proj}, argv=["consolidate"], env=env)
         gated = rc6 == 0 and sum(f.startswith("2020-02") for f in os.listdir(notes_dir)) == 31
+        # cross-pass dedupe must be line-anchored: a note whose name is a string
+        # prefix of an already-archived entry must still be digested, never
+        # silently dropped (near-miss: '-fix' vs pre-existing '-fix-bug')
+        try:
+            os.remove(os.path.join(mem_base, ".last-consolidation"))
+        except OSError:
+            pass
+        os.makedirs(arch, exist_ok=True)
+        with open(os.path.join(arch, "2020-03.md"), "w") as f:
+            f.write("# Archive 2020-03\n\n## 2020-03-01-0000-fix-bug\nold bug fix\n")
+        with open(os.path.join(notes_dir, "2020-03-01-0000-fix.md"), "w") as f:
+            f.write("# prefix collision probe\n\n## Asked\n- probe question\n")
+        rc7, _ = run(MEMORY, {"cwd": proj}, argv=["consolidate"], env=env)
+        a3 = open(os.path.join(arch, "2020-03.md"), errors="replace").read()
+        collision = rc7 == 0 and "\n## 2020-03-01-0000-fix\n" in ("\n" + a3) and "probe question" in a3
         for name, ok in [("memory distill writes note", rc == 0 and wrote),
                          ("memory scrubs credentials", wrote and not leaked),
                          ("memory recall succeeds", rc2 == 0),
@@ -128,12 +143,13 @@ def main():
                          ("session_start payload excluded from notes", no_sysprompt),
                          ("ltm consolidate no-op below threshold", noop),
                          ("ltm consolidate archives, scrubs, removes originals", archived),
-                         ("ltm consolidate honors daily stamp", gated)]:
+                         ("ltm consolidate honors daily stamp", gated),
+                         ("ltm consolidate dedupe is line-anchored", collision)]:
             print(f"{'OK  ' if ok else 'FAIL'} {name}")
             if not ok:
                 fails.append(name)
 
-    total = len(GUARD_CASES) + 10
+    total = len(GUARD_CASES) + 11
     print(f"\n{total - len(fails)}/{total} passed" + (f" — FAILURES: {fails}" if fails else ""))
     return 1 if fails else 0
 

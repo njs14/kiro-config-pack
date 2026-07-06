@@ -194,8 +194,12 @@ OAuth test, documented here instead.
 Closes the "No LTM consolidation yet" known limit. `memory.py consolidate` (also
 auto-run from the Stop-hook distill) rolls notes older than 30 days into monthly
 `archive/` digests, gated to projects with >30 notes and at most one pass per day.
-Deterministic, no model. Three new selftest cases cover the below-threshold no-op,
-the archive/scrub/remove pass, and the daily stamp gate: **selftest is now 32/32**.
+Deterministic, no model. Four new selftest cases cover the below-threshold no-op,
+the archive/scrub/remove pass, the daily stamp gate, and a line-anchored dedupe
+regression: **selftest is now 33/33**. The dedupe case exists because a
+fresh-context verifier pass caught an unanchored substring match that could skip
+digesting a note whose filename prefixed an already-archived one while still
+deleting the original; fixed before it ever ran on real data.
 Semantic consolidation is documented as a manual Claude Code routine in DREAMING.md
 (zero Kiro credits) rather than automated, deliberately.
 

@@ -261,8 +261,8 @@ def consolidate_ltm(base):
             f"# Archive {month}\nMonthly digests rolled up from full LTM notes by memory.py.\n"
         parts = [existing.rstrip(), ""]
         for f in sorted(files):
-            if f"## {f[:-3]}" in existing:
-                continue  # digested in an earlier pass; still safe to drop the original
+            if f"\n## {f[:-3]}\n" in "\n" + existing:
+                continue  # digested in an earlier pass; safe to drop the original
             title, asked = digest_note(os.path.join(ltm_dir, f))
             parts.append(f"## {f[:-3]}")
             parts.append(title)

@@ -1,0 +1,162 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "guards-shell",
+      "description": "Consolidated Python guard (destructive commands + audit log). Stdlib-only: swap `uv run --script` for `python3` if preferred.",
+      "trigger": "PreToolUse",
+      "matcher": "execute_bash",
+      "action": {
+        "type": "command",
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      },
+      "timeout": 15
+    },
+    {
+      "name": "guards-filesystem",
+      "description": "Consolidated Python guard (secret paths, credential content, IAM wildcard-admin, OWASP warn tier, audit log). One process replaces five shell pipelines.",
+      "trigger": "PreToolUse",
+      "matcher": "fs_read|fs_write",
+      "action": {
+        "type": "command",
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      },
+      "timeout": 15
+    },
+    {
+      "name": "guards-prompt",
+      "description": "Scan the user's own prompt for credential material before it enters context/session logs (idea from disler/claude-code-hooks-mastery UserPromptSubmit validation). Audit records length only, never prompt content.",
+      "trigger": "UserPromptSubmit",
+      "action": {
+        "type": "command",
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      },
+      "timeout": 10
+    },
+    {
+      "name": "format-web-on-save",
+      "trigger": "PostFileSave",
+      "matcher": "\\.(ts|tsx|js|jsx|json|css|md)$",
+      "action": {
+        "type": "command",
+        "command": "[ -x node_modules/.bin/prettier ] && node_modules/.bin/prettier --write \"{{filePath}}\" >/dev/null 2>&1; exit 0"
+      },
+      "timeout": 30,
+      "description": "Prettier via the project-local binary directly \u2014 no npx/bunx launcher (3x faster), and inert-by-design in projects without prettier installed."
+    },
+    {
+      "name": "format-python-on-save",
+      "trigger": "PostFileSave",
+      "matcher": "\\.py$",
+      "action": {
+        "type": "command",
+        "command": "ruff format \"{{filePath}}\" 2>/dev/null || black -q \"{{filePath}}\" 2>/dev/null || true"
+      },
+      "timeout": 30
+    },
+    {
+      "name": "tofu-fmt-on-save",
+      "description": "OpenTofu canonical formatting on any .tf/.tfvars save.",
+      "trigger": "PostFileSave",
+      "matcher": "\\.(tf|tfvars)$",
+      "action": {
+        "type": "command",
+        "command": "command -v tofu >/dev/null 2>&1 && tofu fmt \"{{filePath}}\" >/dev/null 2>&1; exit 0"
+      },
+      "timeout": 30
+    },
+    {
+      "name": "tflint-on-save",
+      "description": "tflint on the saved file's module directory; findings surface as a user warning (exit 1). Silently skips if tflint absent.",
+      "trigger": "PostFileSave",
+      "matcher": "\\.tf$",
+      "action": {
+        "type": "command",
+        "command": "command -v tflint >/dev/null 2>&1 || exit 0; OUT=$(tflint --format=compact --chdir=\"$(dirname \"{{filePath}}\")\" 2>/dev/null); if [ -n \"$OUT\" ]; then echo \"$OUT\" >&2; exit 1; fi; exit 0"
+      },
+      "timeout": 60
+    },
+    {
+      "name": "json-validate-on-save",
+      "description": "jq syntax check on every JSON save (policies, configs, this file).",
+      "trigger": "PostFileSave",
+      "matcher": "\\.json$",
+      "action": {
+        "type": "command",
+        "command": "jq empty \"{{filePath}}\" 2>/dev/null || { echo \"Invalid JSON: {{filePath}}\" >&2; exit 1; }"
+      },
+      "timeout": 10
+    },
+    {
+      "name": "gitleaks-scan-on-save",
+      "description": "Secret CONTENT scan on every save (entropy + rules, catches what the regex tier misses). Tries v8.19+ dir mode, falls back to detect. Skips if gitleaks absent.",
+      "trigger": "PostFileSave",
+      "matcher": ".*",
+      "action": {
+        "type": "command",
+        "command": "command -v gitleaks >/dev/null 2>&1 || exit 0; gitleaks dir \"{{filePath}}\" --no-banner --exit-code 9 >/dev/null 2>&1; RC=$?; [ $RC -eq 0 ] && exit 0; [ $RC -ne 9 ] && gitleaks detect --no-git --no-banner -s \"{{filePath}}\" >/dev/null 2>&1 && exit 0; echo \"gitleaks: potential secret committed to {{filePath}} \u2014 inspect before pushing\" >&2; exit 1"
+      },
+      "timeout": 30
+    },
+    {
+      "name": "session-git-context",
+      "trigger": "SessionStart",
+      "action": {
+        "type": "command",
+        "command": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && { echo \"## Git context\"; git status -sb; echo; echo \"Recent commits:\"; git log --oneline -5; } || true"
+      },
+      "timeout": 10
+    },
+    {
+      "name": "remind-tests-on-write",
+      "description": "Opt-in v3 agent action (no subprocess): static steering nudge on every write.",
+      "trigger": "PreToolUse",
+      "matcher": "fs_write",
+      "action": {
+        "type": "agent",
+        "prompt": "If this change modifies source code behavior, verify the corresponding tests are updated or added before finishing the task."
+      },
+      "enabled": false
+    },
+    {
+      "name": "notify-task-complete",
+      "description": "macOS banner when a spec task finishes (PostTaskExec = per-task granularity that native chat.enableNotifications doesn't give). Inert without osascript.",
+      "trigger": "PostTaskExec",
+      "action": {
+        "type": "command",
+        "command": "command -v osascript >/dev/null 2>&1 && osascript -e 'display notification \"Spec task complete\" with title \"Kiro\" sound name \"Glass\"' >/dev/null 2>&1; exit 0"
+      },
+      "timeout": 10
+    },
+    {
+      "name": "notify-session-done",
+      "description": "macOS banner at session end. Redundant if chat.enableNotifications covers you \u2014 delete or disable if it's noise.",
+      "trigger": "Stop",
+      "action": {
+        "type": "command",
+        "command": "command -v osascript >/dev/null 2>&1 && osascript -e 'display notification \"Session ended\" with title \"Kiro\" sound name \"Glass\"' >/dev/null 2>&1; exit 0"
+      },
+      "timeout": 10
+    },
+    {
+      "name": "memory-recall",
+      "description": "Two-tier memory: inject STM digest (last session, bounded at 200 lines) + LTM note index at session start. Deep retrieval via the Memory knowledge base.",
+      "trigger": "SessionStart",
+      "action": {
+        "type": "command",
+        "command": "uv run --script ~/.kiro/hooks/memory.py recall"
+      },
+      "timeout": 10
+    },
+    {
+      "name": "memory-distill",
+      "description": "Distill the just-ended session JSONL into an LTM markdown note + refreshed STM digest. Heuristic extraction, credential-scrubbed, fail-open.",
+      "trigger": "Stop",
+      "action": {
+        "type": "command",
+        "command": "uv run --script ~/.kiro/hooks/memory.py distill"
+      },
+      "timeout": 30
+    }
+  ]
+}

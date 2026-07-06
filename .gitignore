@@ -1,0 +1,16 @@
+# Python build artifacts
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# installer backups (never created in-repo, but belt-and-braces)
+backup-*/
+
+# local Claude Code session tooling — not part of the Kiro pack
+.claude/
+CLAUDE.md
+
+# test artifacts
+TESTING.md.tmp

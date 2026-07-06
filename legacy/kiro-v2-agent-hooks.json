@@ -1,0 +1,36 @@
+{
+  "$comment": "Kiro CLI v2 companion to the v3 suite. Merge the 'hooks' block into your v2 agent config (e.g. ~/.kiro/agents/default.json) \u2014 v2 has no standalone hooks files. camelCase triggers are the v2 convention; guards.py is shared with v3 unchanged. Run `kiro-cli agent migrate` later to confirm v3 equivalence.",
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && { echo \"## Git context\"; git status -sb; echo; echo \"Recent commits:\"; git log --oneline -5; } || true"
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      }
+    ],
+    "preToolUse": [
+      {
+        "matcher": "execute_bash",
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      },
+      {
+        "matcher": "fs_read|fs_write",
+        "command": "uv run --script ~/.kiro/hooks/guards.py"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "fs_write",
+        "command": "P=$(cat | jq -r '.tool_input.path // empty'); case \"$P\" in *.ts|*.tsx|*.js|*.jsx|*.json|*.css|*.md) [ -x node_modules/.bin/prettier ] && node_modules/.bin/prettier --write \"$P\" >/dev/null 2>&1;; *.py) ruff format \"$P\" 2>/dev/null || black -q \"$P\" 2>/dev/null;; *.tf|*.tfvars) command -v tofu >/dev/null 2>&1 && tofu fmt \"$P\" >/dev/null 2>&1;; esac; exit 0"
+      }
+    ],
+    "stop": [
+      {
+        "command": "command -v osascript >/dev/null 2>&1 && osascript -e 'display notification \"Session ended\" with title \"Kiro v2\" sound name \"Glass\"' >/dev/null 2>&1; exit 0"
+      }
+    ]
+  }
+}

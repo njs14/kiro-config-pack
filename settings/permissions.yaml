@@ -1,0 +1,188 @@
+# ~/.kiro/settings/permissions.yaml  (user scope)
+# Companion to .kiro/hooks/anthropic-defaults.json
+#
+# Posture: "auto mode with a floor" — the v3 replacement for v2's
+# /tools trust-all. Allow is the default for reads, writes, and shell;
+# deny/ask carve-outs are the enforcement floor and ALWAYS win
+# (deny > ask > allow, restrictive rules cannot be overridden from any scope).
+#
+# Division of labor with hooks:
+#   - Secret PATHS:        denied here (authoritative) + hook feedback to model
+#   - Secret CONTENT:      hooks only (permissions never see file content)
+#   - IAM wildcard admin:  hooks only (same reason)
+#   - Pipelines (curl|sh): hooks only (engine splits compound commands
+#                          before matching — no pattern here can see a pipe)
+#   - Destructive verbs:   denied here + hook-blocked
+#
+# The hardcoded Kiro scope already denies agent writes to ~/.kiro/settings/
+# and asks on writes to .kiro/hooks/** — this config is self-protecting.
+
+rules:
+  # ---------------------------------------------------------------
+  # DENY — the floor. Nothing below can override these.
+  # ---------------------------------------------------------------
+
+  - capability: filesystem
+    effect: deny
+    match:
+      - "**/.env"
+      - "**/.env.*"
+      - "**/*.pem"
+      - "**/*.key"
+      - "**/id_rsa*"
+      - "**/id_ed25519*"
+      - "**/id_ecdsa*"
+      - "**/.ssh/**"
+      - "**/.aws/credentials"
+      - "**/.npmrc"
+      - "**/.netrc"
+      - "**/secrets.json"
+      - "**/secrets.yaml"
+      - "**/secrets.yml"
+      - "**/*.tfstate"
+      - "**/*.tfstate.backup"
+
+  - capability: shell
+    effect: deny
+    match:
+      - "cat *.env"
+      - "cat .env*"
+      - "* ~/.ssh/*"
+      - "* ~/.aws/credentials*"
+      - "rm -rf /*"
+      - "rm -rf ~*"
+      - "sudo *"
+      - "chmod 777*"
+      - "chmod -R 777*"
+      - "mkfs*"
+      - "dd * of=/dev/*"
+      - "shutdown*"
+      - "reboot*"
+      - "git push --force*"
+      - "git push -f*"
+      - "git push * --force*"
+      - "* --no-verify"
+
+  # ---------------------------------------------------------------
+  # ASK — the only friction you should ever feel.
+  # ---------------------------------------------------------------
+
+  # Leaves the machine / mutates shared state.
+  - capability: shell
+    effect: ask
+    match:
+      - "git push*"           # force variants still denied above
+      - "npm publish*"
+      - "docker push*"
+      - "gh pr merge*"
+      - "gh release*"
+
+  # Data exfil guard: with shell now allow-by-default, plain curl/wget GETs
+  # are fine, but sending data off-box gets a human glance.
+  - capability: shell
+    effect: ask
+    match:
+      - "curl * -d*"
+      - "curl * --data*"
+      - "curl * -F*"
+      - "curl * -T*"
+      - "curl * -X POST*"
+      - "curl * -X PUT*"
+      - "wget * --post*"
+
+  # IaC lifecycle: state/backend/provider boundaries stay gated.
+  - capability: shell
+    effect: ask
+    match:
+      - "tofu init*"
+      - "tofu apply*"
+      - "tofu destroy*"
+      - "terraform init*"
+      - "terraform apply*"
+      - "terraform destroy*"
+
+  # AWS CLI mutating verbs; IAM gated entirely regardless of verb.
+  - capability: shell
+    effect: ask
+    match:
+      - "aws * create-*"
+      - "aws * delete-*"
+      - "aws * put-*"
+      - "aws * update-*"
+      - "aws * modify-*"
+      - "aws * attach-*"
+      - "aws * detach-*"
+      - "aws * terminate-*"
+      - "aws * start-*"
+      - "aws * stop-*"
+      - "aws iam *"
+
+  # Supply-chain-sensitive writes fall out of the blanket allow to here.
+  # (No match list = these come via the exclude on fs_write below.)
+
+  # GitHub MCP: destructive/irreversible ops get a glance.
+  - capability: mcp
+    effect: ask
+    match:
+      - "github/delete_*"
+      - "github/merge_*"
+
+  # ---------------------------------------------------------------
+  # ALLOW — everything else, no prompts.
+  # ---------------------------------------------------------------
+
+  # All reads, everywhere. Secret denies above still win.
+  - capability: fs_read
+    effect: allow
+
+  # All workspace writes, minus supply-chain paths (fall back to ask).
+  - capability: fs_write
+    effect: allow
+    match:
+      - "./**"
+    exclude:
+      - ".github/workflows/**"
+      - "**/Dockerfile"
+      - "**/*.lock"
+
+  # Shell allow-by-default. The deny floor and ask gates above are the
+  # only things standing between the agent and any command — that's the
+  # deliberate trade for zero-friction sessions.
+  - capability: shell
+    effect: allow
+
+  # Research tools.
+  - capability: web_search
+    effect: allow
+  - capability: web_fetch
+    effect: allow
+
+  # ---------------------------------------------------------------
+  # MCP — per-server posture. Verify names against `kiro-cli mcp`.
+  # ---------------------------------------------------------------
+
+  # AWS Knowledge: full allow (read-only docs server by design).
+  - capability: mcp
+    effect: allow
+    match:
+      - "aws-knowledge/*"
+
+  # Exa web search: full allow.
+  - capability: mcp
+    effect: allow
+    match:
+      - "exa/*"
+
+  # GitHub (cloud): everything allowed EXCEPT delete_*/merge_* which the
+  # ask rule above intercepts (restrictive wins). Net effect: all reads +
+  # non-destructive writes (create/update/comment/branch/push) flow freely.
+  - capability: mcp
+    effect: allow
+    match:
+      - "github/*"
+
+  # DeepWiki: full allow.
+  - capability: mcp
+    effect: allow
+    match:
+      - "deepwiki/*"

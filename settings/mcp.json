@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "aws-knowledge": {
+      "url": "https://knowledge-mcp.global.api.aws"
+    },
+    "exa": {
+      "url": "https://mcp.exa.ai/mcp"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.github.com/mcp",
+      "oauth": {
+        "oauthScopes": []
+      }
+    },
+    "deepwiki": {
+      "url": "https://mcp.deepwiki.com/mcp"
+    }
+  }
+}

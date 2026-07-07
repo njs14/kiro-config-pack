@@ -8,8 +8,8 @@ agent harness, hook schema, and permission engine, so the same pack covers both.
 | File | Install to | Purpose |
 |---|---|---|
 | `anthropic-defaults.json` | `~/.kiro/hooks/` | 15 hooks: security guards, formatters, IaC lint, notifications, memory |
-| `kiro-pack.json` (agent) | `~/.kiro/agents/` | Agent config that grants the full tool set and wires the guard and memory hooks. Required on kiro-cli 2.11.0, which only loads hooks from agent configs, not standalone hook files (see note below) |
-| `kiro-pack.md` (agent) | `~/.kiro/agents/` | Same agent in the markdown format the v3 docs prefer: `tools: ["*"]`, permissions.yaml as the floor, hooks from the standalone hook files. Ignored by 2.11.0, which parses only JSON agents; delete the `.json` twin once your build reads markdown |
+| `kiro-pack.json` (agent) | `~/.kiro/agents/` | Agent config that grants the full tool set, carries the coding-agent system prompt, and wires the guard and memory hooks. Required on kiro-cli 2.11.0, which only loads hooks from agent configs, not standalone hook files (see note below) |
+| `kiro-pack.md` (agent) | `~/.kiro/agents/` | Same agent in the markdown format the v3 docs prefer: `tools: ["*"]`, the same system prompt as the body, permissions.yaml as the floor, hooks from the standalone hook files. Ignored by 2.11.0, which parses only JSON agents; delete the `.json` twin once your build reads markdown |
 | `guards.py` | `~/.kiro/hooks/` (`chmod +x`) | Consolidated PreToolUse/UserPromptSubmit guard engine |
 | `memory.py` | `~/.kiro/hooks/` (`chmod +x`) | Two-tier session memory (STM inject + LTM notes) |
 | `permissions.yaml` | `~/.kiro/settings/` | Capability rules: allow-by-default with a deny floor |

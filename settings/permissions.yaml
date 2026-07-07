@@ -1,25 +1,25 @@
 # ~/.kiro/settings/permissions.yaml  (user scope)
 # Companion to .kiro/hooks/anthropic-defaults.json
 #
-# Posture: "auto mode with a floor" — the v3 replacement for v2's
-# /tools trust-all. Allow is the default for reads, writes, and shell;
-# deny/ask carve-outs are the enforcement floor and ALWAYS win
-# (deny > ask > allow, restrictive rules cannot be overridden from any scope).
+# Posture: auto mode with a floor. This is the v3 replacement for v2's
+# /tools trust-all. Allow is the default for reads, writes, and shell.
+# The deny and ask carve-outs are the floor and always win
+# (deny > ask > allow; restrictive rules can't be overridden from any scope).
 #
 # Division of labor with hooks:
 #   - Secret PATHS:        denied here (authoritative) + hook feedback to model
 #   - Secret CONTENT:      hooks only (permissions never see file content)
 #   - IAM wildcard admin:  hooks only (same reason)
-#   - Pipelines (curl|sh): hooks only (engine splits compound commands
-#                          before matching — no pattern here can see a pipe)
+#   - Pipelines (curl|sh): hooks only. The engine splits compound commands
+#                          before matching, so no pattern here can see a pipe.
 #   - Destructive verbs:   denied here + hook-blocked
 #
 # The hardcoded Kiro scope already denies agent writes to ~/.kiro/settings/
-# and asks on writes to .kiro/hooks/** — this config is self-protecting.
+# and asks on writes to .kiro/hooks/**, so this config protects itself.
 
 rules:
   # ---------------------------------------------------------------
-  # DENY — the floor. Nothing below can override these.
+  # DENY: the floor. Nothing below can override these.
   # ---------------------------------------------------------------
 
   - capability: filesystem
@@ -64,10 +64,10 @@ rules:
       - "* --no-verify"
 
   # ---------------------------------------------------------------
-  # ASK — the only friction you should ever feel.
+  # ASK: the only prompts you should see.
   # ---------------------------------------------------------------
 
-  # Leaves the machine / mutates shared state.
+  # Leaves the machine or mutates shared state.
   - capability: shell
     effect: ask
     match:
@@ -117,10 +117,10 @@ rules:
       - "aws * stop-*"
       - "aws iam *"
 
-  # Write ask-list: the ONLY writes that prompt. Everything else is
+  # Write ask-list: the writes that prompt. Everything else is
   # blanket-allowed below (restrictive wins, so this list beats the allow).
-  # Three groups: system persistence, code-executes-on-login, and the
-  # pack's own config (an agent editing its guards should get a glance).
+  # It covers system persistence, files that run code at login, and the
+  # pack's own config, since an agent editing its guards should get a glance.
   - capability: fs_write
     effect: ask
     match:
@@ -160,17 +160,17 @@ rules:
       - "github/merge_*"
 
   # ---------------------------------------------------------------
-  # ALLOW — everything else, no prompts.
+  # ALLOW: everything else, no prompts.
   # ---------------------------------------------------------------
 
   # All reads, everywhere. Secret denies above still win.
   - capability: fs_read
     effect: allow
 
-  # All writes, everywhere. Previously this was workspace-only ("./**"),
-  # which made every out-of-workspace write (memory notes, scratch dirs,
-  # sibling repos) fall to the implicit ask default — too much friction.
-  # The secrets deny floor and the write ask-list above still always win.
+  # All writes, everywhere. This was workspace-only ("./**") before, which
+  # made every out-of-workspace write (memory notes, scratch dirs, sibling
+  # repos) fall to the implicit ask default and prompt constantly. The
+  # secrets deny floor and the write ask-list above still always win.
   - capability: fs_write
     effect: allow
     match:
@@ -178,8 +178,8 @@ rules:
       - "./**"
 
   # Shell allow-by-default. The deny floor and ask gates above are the
-  # only things standing between the agent and any command — that's the
-  # deliberate trade for zero-friction sessions.
+  # only things standing between the agent and any command. That trade is
+  # deliberate: it's what keeps sessions free of prompts.
   - capability: shell
     effect: allow
 
@@ -190,7 +190,7 @@ rules:
     effect: allow
 
   # ---------------------------------------------------------------
-  # MCP — per-server posture. Verify names against `kiro-cli mcp`.
+  # MCP: per-server posture. Verify names against `kiro-cli mcp`.
   # ---------------------------------------------------------------
 
   # AWS Knowledge: full allow (read-only docs server by design).
@@ -205,9 +205,9 @@ rules:
     match:
       - "exa/*"
 
-  # GitHub (cloud): everything allowed EXCEPT delete_*/merge_* which the
-  # ask rule above intercepts (restrictive wins). Net effect: all reads +
-  # non-destructive writes (create/update/comment/branch/push) flow freely.
+  # GitHub (cloud): everything allowed except delete_*/merge_*, which the
+  # ask rule above intercepts (restrictive wins). Net effect: all reads,
+  # plus non-destructive writes (create/update/comment/branch/push) flow freely.
   - capability: mcp
     effect: allow
     match:

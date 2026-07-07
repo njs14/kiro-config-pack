@@ -203,6 +203,26 @@ deleting the original; fixed before it ever ran on real data.
 Semantic consolidation is documented as a manual Claude Code routine in DREAMING.md
 (zero Kiro credits) rather than automated, deliberately.
 
+## Agent config aligned with v3 docs (2026-07-07, zero credits)
+
+Prompted by the kiro.dev v3 docs (agent-config, permissions): agents there are
+markdown-first with a `tools` grant, unioned with permissions.yaml as the floor.
+Local probes with `kiro-cli agent validate` showed 2.11.0 parses only JSON agents
+(a markdown agent is rejected as invalid JSON, and the shipped example config
+says only `.json` loads), so the pack now carries both:
+
+- `kiro-pack.json` gained an explicit full tool grant using this build's own tag
+  vocabulary (`read, write, shell, aws, report, introspect, knowledge, thinking,
+  todo, delegate`); previously no `tools` field, i.e. whatever the default grant
+  was. Hooks unchanged (live-verified earlier).
+- `kiro-pack.md` added for builds that read markdown agents: `tools: ["*"]`, no
+  inline hooks (the v3 path gets them from the standalone hook files already
+  installed), permissions.yaml as the boundary.
+
+Validator-verified only; whether 2.11.0 semantically honors each tag in a live
+session was not tested (would cost credits). `kiro-cli agent list` shows a single
+kiro-pack entry, so the markdown twin causes no collision on this build.
+
 ## Deferred (would cost credits or need the IDE)
 
 - ~~Live verification that agent-config hooks fire~~ — done, see "Verification

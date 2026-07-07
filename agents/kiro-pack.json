@@ -1,6 +1,18 @@
 {
   "name": "kiro-pack",
-  "description": "Kiro agent with the kiro-config-pack guard + memory hooks wired via the agent-config hooks block (the mechanism kiro-cli 2.11.0 actually loads; standalone ~/.kiro/hooks/*.json files are not read by this build). Use with `kiro-cli chat --agent kiro-pack` or `kiro-cli agent set-default kiro-pack`.",
+  "description": "Kiro agent with the kiro-config-pack guard + memory hooks wired via the agent-config hooks block (the mechanism kiro-cli 2.11.0 actually loads; standalone ~/.kiro/hooks/*.json files are not read by this build, and markdown agents are not parsed). Full tool grant; ~/.kiro/settings/permissions.yaml is the enforcement floor. Use with `kiro-cli chat --agent kiro-pack` or `kiro-cli agent set-default kiro-pack`.",
+  "tools": [
+    "read",
+    "write",
+    "shell",
+    "aws",
+    "report",
+    "introspect",
+    "knowledge",
+    "thinking",
+    "todo",
+    "delegate"
+  ],
   "hooks": {
     "agentSpawn": [
       {

@@ -21,6 +21,7 @@ FILES=(
   "skills/kiro-config-pack/SKILL.md|${KIRO_DIR}/skills/kiro-config-pack/SKILL.md"
   "skills/kiro-config-pack/scripts/selftest.py|${KIRO_DIR}/skills/kiro-config-pack/scripts/selftest.py"
   "agents/kiro-pack.json|${KIRO_DIR}/agents/kiro-pack.json"
+  "agents/kiro-pack.md|${KIRO_DIR}/agents/kiro-pack.md"
 )
 
 EXECUTABLES=(

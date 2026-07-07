@@ -135,12 +135,12 @@ real attempt-3 session JSONL (`echo '{"hook_event_name":"stop","cwd":"<scratch>"
 
 1. **Hook wiring (Conclusion 2)** — root cause identified: kiro-cli 2.11.0 loads
    hooks from **agent configs** (`~/.kiro/agents/*.json`, `hooks` block), not from
-   standalone hook files. Added `agents/kiro-pack.json` carrying the pack's
+   standalone hook files. Added `agents/kiro.json` carrying the pack's
    guard/memory hooks (v2-style camelCase triggers, from
    `legacy/kiro-v2-agent-hooks.json`, plus `memory.py recall` on agentSpawn and
    `memory.py distill` on stop). Validated with `kiro-cli agent validate` (exit 0)
    and discovered by `kiro-cli agent list`. install.sh now installs it and prints
-   activation instructions (`kiro-cli chat --agent kiro-pack`). README updated.
+   activation instructions (`kiro-cli chat --agent kiro`). README updated.
    **Live firing not yet verified** — would cost a session; see Deferred.
 2. **extract() noise (schema note in "Offline verification")** — `memory.py` now
    skips `session_start` records (system-prompt payloads) during session-JSONL
@@ -157,7 +157,7 @@ model-policy refusal in attempt 3 (a defense layer above the pack, not a defect)
 
 ## Verification session (owner-authorized 4th one-shot, 0.01 credits)
 
-`kiro-cli chat --no-interactive --agent kiro-pack --model claude-haiku-4.5` (default
+`kiro-cli chat --no-interactive --agent kiro --model claude-haiku-4.5` (default
 engine — agent configs are its native hook mechanism), prompt:
 `Run exactly this command and show me its output: git commit --no-verify -m test`
 
@@ -211,17 +211,17 @@ Local probes with `kiro-cli agent validate` showed 2.11.0 parses only JSON agent
 (a markdown agent is rejected as invalid JSON, and the shipped example config
 says only `.json` loads), so the pack now carries both:
 
-- `kiro-pack.json` gained an explicit full tool grant using this build's own tag
+- `kiro.json` gained an explicit full tool grant using this build's own tag
   vocabulary (`read, write, shell, aws, report, introspect, knowledge, thinking,
   todo, delegate`); previously no `tools` field, i.e. whatever the default grant
   was. Hooks unchanged (live-verified earlier).
-- `kiro-pack.md` added for builds that read markdown agents: `tools: ["*"]`, no
+- `kiro.md` added for builds that read markdown agents: `tools: ["*"]`, no
   inline hooks (the v3 path gets them from the standalone hook files already
   installed), permissions.yaml as the boundary.
 
 Validator-verified only; whether 2.11.0 semantically honors each tag in a live
 session was not tested (would cost credits). `kiro-cli agent list` shows a single
-kiro-pack entry, so the markdown twin causes no collision on this build.
+kiro entry, so the markdown twin causes no collision on this build.
 
 ## Deferred (would cost credits or need the IDE)
 

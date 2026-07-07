@@ -20,8 +20,8 @@ FILES=(
   "steering/memory-steering.md|${KIRO_DIR}/steering/memory-steering.md"
   "skills/kiro-config-pack/SKILL.md|${KIRO_DIR}/skills/kiro-config-pack/SKILL.md"
   "skills/kiro-config-pack/scripts/selftest.py|${KIRO_DIR}/skills/kiro-config-pack/scripts/selftest.py"
-  "agents/kiro-pack.json|${KIRO_DIR}/agents/kiro-pack.json"
-  "agents/kiro-pack.md|${KIRO_DIR}/agents/kiro-pack.md"
+  "agents/kiro.json|${KIRO_DIR}/agents/kiro.json"
+  "agents/kiro.md|${KIRO_DIR}/agents/kiro.md"
 )
 
 EXECUTABLES=(
@@ -87,7 +87,7 @@ echo "Not installed automatically:"
 echo "  legacy/kiro-v2-agent-hooks.json — merge manually into a v2 agent config if needed."
 echo
 echo "Hook activation on kiro-cli 2.11.0: hooks load via the agent config, so run"
-echo "  kiro-cli chat --agent kiro-pack        (per session), or"
-echo "  kiro-cli agent set-default kiro-pack   (make it the default)"
+echo "  kiro-cli chat --agent kiro        (per session), or"
+echo "  kiro-cli agent set-default kiro   (make it the default)"
 echo
 echo "Done. Executables: guards.py, memory.py, selftest.py"

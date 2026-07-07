@@ -8,8 +8,8 @@ agent harness, hook schema, and permission engine, so the same pack covers both.
 | File | Install to | Purpose |
 |---|---|---|
 | `anthropic-defaults.json` | `~/.kiro/hooks/` | 15 hooks: security guards, formatters, IaC lint, notifications, memory |
-| `kiro-pack.json` (agent) | `~/.kiro/agents/` | Agent config that grants the full tool set, carries the coding-agent system prompt, and wires the guard and memory hooks. Required on kiro-cli 2.11.0, which only loads hooks from agent configs, not standalone hook files (see note below) |
-| `kiro-pack.md` (agent) | `~/.kiro/agents/` | Same agent in the markdown format the v3 docs prefer: `tools: ["*"]`, the same system prompt as the body, permissions.yaml as the floor, hooks from the standalone hook files. Ignored by 2.11.0, which parses only JSON agents; delete the `.json` twin once your build reads markdown |
+| `kiro.json` (agent) | `~/.kiro/agents/` | Agent config that grants the full tool set, carries the coding-agent system prompt, and wires the guard and memory hooks. Required on kiro-cli 2.11.0, which only loads hooks from agent configs, not standalone hook files (see note below) |
+| `kiro.md` (agent) | `~/.kiro/agents/` | Same agent in the markdown format the v3 docs prefer: `tools: ["*"]`, the same system prompt as the body, permissions.yaml as the floor, hooks from the standalone hook files. Ignored by 2.11.0, which parses only JSON agents; delete the `.json` twin once your build reads markdown |
 | `guards.py` | `~/.kiro/hooks/` (`chmod +x`) | Consolidated PreToolUse/UserPromptSubmit guard engine |
 | `memory.py` | `~/.kiro/hooks/` (`chmod +x`) | Two-tier session memory (STM inject + LTM notes) |
 | `permissions.yaml` | `~/.kiro/settings/` | Capability rules: allow-by-default with a deny floor |
@@ -89,9 +89,9 @@ positive and a near-miss negative test case.
 > standalone hook files from `~/.kiro/hooks/*.json` or workspace `.kiro/hooks/`
 > in CLI sessions, and it parses only JSON agent configs (its validator rejects
 > markdown agents). Hooks only run when wired through an agent config, so start
-> sessions with `kiro-cli chat --agent kiro-pack` (or `kiro-cli agent
-> set-default kiro-pack`). The v3 docs prefer markdown agents plus standalone
-> hook files; `kiro-pack.md` and `anthropic-defaults.json` cover that path for
+> sessions with `kiro-cli chat --agent kiro` (or `kiro-cli agent
+> set-default kiro`). The v3 docs prefer markdown agents plus standalone
+> hook files; `kiro.md` and `anthropic-defaults.json` cover that path for
 > builds that read it (Kiro IDE / later CLI builds). In both worlds the tool
 > grant is broad on purpose: permissions.yaml, not the tool list, is the boundary.
 

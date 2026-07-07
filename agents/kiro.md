@@ -2,7 +2,7 @@
 description: >
   Governed general-purpose coding agent for builds that read markdown agent
   configs (the v3 documented format; kiro-cli 2.11.0 ignores this file and uses
-  kiro-pack.json instead). Grants all tools and relies on
+  kiro.json instead). Grants all tools and relies on
   ~/.kiro/settings/permissions.yaml as the enforcement floor. Hooks come from
   the standalone hook files in ~/.kiro/hooks/ on engines that execute them.
 tools: ["*"]

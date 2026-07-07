@@ -223,6 +223,21 @@ Validator-verified only; whether 2.11.0 semantically honors each tag in a live
 session was not tested (would cost credits). `kiro-cli agent list` shows a single
 kiro entry, so the markdown twin causes no collision on this build.
 
+## Write permissions loosened to allow-everywhere + ask-list (2026-07-07, zero credits)
+
+Owner reported too many write prompts: the original `fs_write` allow matched
+only `./**` (workspace), so every out-of-workspace write fell to the implicit
+v3 ask default. Replaced with a blanket allow (`**` plus `./**` to cover both
+absolute and workspace-relative matching) beaten only by the secrets deny floor
+and a new explicit 22-pattern ask-list: system dirs (`/etc`, `/usr`, `/System`,
+`/Library`, ...), login/persistence files (shell rc files, LaunchAgents/Daemons),
+the pack's own enforcement surface (`.kiro/hooks|agents|steering|skills`), and
+the former supply-chain excludes (workflows, Dockerfile, lockfiles). YAML
+parse-checked and installed. Caveat: glob anchoring semantics (absolute-path
+matching, whether `**` crosses `/`) are engine behavior that only a live
+session can confirm; if writes still prompt, the first suspect is the allow
+pattern shape, not the ask-list.
+
 ## Deferred (would cost credits or need the IDE)
 
 - ~~Live verification that agent-config hooks fire~~ — done, see "Verification

@@ -12,7 +12,7 @@ agent harness, hook schema, and permission engine, so the same pack covers both.
 | `kiro.md` (agent) | `~/.kiro/agents/` | Same agent in the markdown format the v3 docs prefer: `tools: ["*"]`, the same system prompt as the body, permissions.yaml as the floor, hooks from the standalone hook files. Ignored by 2.11.0, which parses only JSON agents; delete the `.json` twin once your build reads markdown |
 | `guards.py` | `~/.kiro/hooks/` (`chmod +x`) | Consolidated PreToolUse/UserPromptSubmit guard engine |
 | `memory.py` | `~/.kiro/hooks/` (`chmod +x`) | Two-tier session memory (STM inject + LTM notes) |
-| `permissions.yaml` | `~/.kiro/settings/` | Capability rules: allow-by-default with a deny floor |
+| `permissions.yaml` | `~/.kiro/settings/` | Capability rules: allow-by-default (reads, shell, and writes anywhere) with a secrets deny floor and a short write ask-list (system dirs, login files, the pack's own config, CI/supply-chain files) |
 | `mcp.json` | `~/.kiro/settings/` | aws-knowledge, exa, github (OAuth), deepwiki; no stored secrets |
 | `kiro-v2-agent-hooks.json` | merge into a v2 agent config | Optional: same guardrails for legacy 2.x sessions |
 | `memory-steering.md` | `~/.kiro/steering/` (or `.kiro/steering/` per-repo) | Teaches both surfaces to consult memory notes |

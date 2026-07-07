@@ -117,8 +117,40 @@ rules:
       - "aws * stop-*"
       - "aws iam *"
 
-  # Supply-chain-sensitive writes fall out of the blanket allow to here.
-  # (No match list = these come via the exclude on fs_write below.)
+  # Write ask-list: the ONLY writes that prompt. Everything else is
+  # blanket-allowed below (restrictive wins, so this list beats the allow).
+  # Three groups: system persistence, code-executes-on-login, and the
+  # pack's own config (an agent editing its guards should get a glance).
+  - capability: fs_write
+    effect: ask
+    match:
+      # System and OS-managed locations.
+      - "/etc/**"
+      - "/private/etc/**"
+      - "/usr/**"
+      - "/bin/**"
+      - "/sbin/**"
+      - "/System/**"
+      - "/Library/**"
+      # Login/persistence vectors in $HOME.
+      - "**/.zshrc"
+      - "**/.zprofile"
+      - "**/.zshenv"
+      - "**/.bashrc"
+      - "**/.bash_profile"
+      - "**/.profile"
+      - "**/Library/LaunchAgents/**"
+      - "**/Library/LaunchDaemons/**"
+      # The pack's own enforcement surface (settings/ is already denied
+      # by the hardcoded Kiro scope; these cover the rest).
+      - "**/.kiro/hooks/**"
+      - "**/.kiro/agents/**"
+      - "**/.kiro/steering/**"
+      - "**/.kiro/skills/**"
+      # Supply-chain-sensitive files in any project.
+      - "**/.github/workflows/**"
+      - "**/Dockerfile"
+      - "**/*.lock"
 
   # GitHub MCP: destructive/irreversible ops get a glance.
   - capability: mcp
@@ -135,15 +167,15 @@ rules:
   - capability: fs_read
     effect: allow
 
-  # All workspace writes, minus supply-chain paths (fall back to ask).
+  # All writes, everywhere. Previously this was workspace-only ("./**"),
+  # which made every out-of-workspace write (memory notes, scratch dirs,
+  # sibling repos) fall to the implicit ask default — too much friction.
+  # The secrets deny floor and the write ask-list above still always win.
   - capability: fs_write
     effect: allow
     match:
+      - "**"
       - "./**"
-    exclude:
-      - ".github/workflows/**"
-      - "**/Dockerfile"
-      - "**/*.lock"
 
   # Shell allow-by-default. The deny floor and ask gates above are the
   # only things standing between the agent and any command — that's the
